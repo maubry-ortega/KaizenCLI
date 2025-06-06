@@ -11,7 +11,7 @@
       ```
    2. Clona el repositorio:
       ```bash
-      git clone https://github.com/tu-usuario/kaizencli.git
+      git clone https://github.com/maubry-ortega/kaizencli.git
       cd kaizencli
       ```
    3. Instala las dependencias:

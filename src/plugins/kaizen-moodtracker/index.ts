@@ -1,5 +1,6 @@
-// src/plugins/kaizen-moodtracker/index.ts
+// # VolleyDevByMaubry [4/5] La ejecución desvela el arte cifrado de la mejora continua.
 import { KaizenContext } from '../../core/context';
+import { addMood, getMoods, deleteMood } from '../../core/moods';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import dayjs from 'dayjs';
@@ -8,40 +9,41 @@ export function register(context: KaizenContext) {
   context.registerCommand({
     module: 'm',
     command: 'add',
-    description: 'Registrar estado de ánimo',
+    description: 'Registra estado',
     handler: async () => {
-      const answers = await inquirer.prompt([
-        {
-          type: 'list',
-          name: 'mood',
-          message: '🙂 ¿Cómo te sientes hoy?',
-          choices: ['Feliz', 'Triste', 'Enojado', 'Cansado', 'Motivado'],
-        },
+      const { mood } = await inquirer.prompt([
+        { type: 'list', name: 'mood', message: '🙂 ¿Cómo te sientes?', choices: ['Feliz', 'Triste', 'Enojado', 'Cansado', 'Motivado'] },
       ]);
-
-      await context.addMood({
-        mood: answers.mood,
-        timestamp: dayjs().toISOString(),
-      });
-      console.log(chalk.green('✅ Estado de ánimo registrado'));
+      await addMood.call(context, { mood, timestamp: dayjs().toISOString() });
+      console.log(chalk.green('✅ Estado registrado'));
     },
   });
 
   context.registerCommand({
     module: 'm',
     command: 'list',
-    description: 'Ver historial emocional',
+    description: 'Muestra historial',
     handler: async () => {
-      const moods = await context.getMoods();
+      const moods = await getMoods.call(context);
       if (moods.length === 0) {
-        console.log(chalk.yellow('📭 No hay estados de ánimo registrados'));
+        console.log(chalk.yellow('📭 Sin registros'));
         return;
       }
-      console.log(chalk.blue('📋 Historial emocional:'));
-      moods.forEach(mood => {
-        const date = dayjs(mood.timestamp).format('YYYY-MM-DD HH:mm:ss');
-        console.log(`  ${chalk.bold(date)} → ${mood.mood}`);
-      });
+      console.log(chalk.blue('📋 Historial:'));
+      moods.forEach((m) => console.log(`  ${chalk.bold(dayjs(m.timestamp).format('YYYY-MM-DD HH:mm'))} → ${m.mood} (ID: ${m.id})`));
+    },
+  });
+
+  context.registerCommand({
+    module: 'm',
+    command: 'del',
+    description: 'Elimina estado',
+    handler: async (...args: string[]) => {
+      console.log(`[DEBUG] Inside del handler - Args: ${JSON.stringify(args)}`);
+      if (!args[0]) throw new Error('ID requerido');
+      console.log(`[DEBUG] ID to delete: ${args[0]}`);
+      await deleteMood.call(context, args[0]);
+      console.log(chalk.green(`✅ Estado ${args[0]} eliminado`));
     },
   });
 }

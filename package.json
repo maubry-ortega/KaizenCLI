@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-	"type" : "module",
+  "type": "module",
   "scripts": {
     "dev": "tsx src/cli/main.ts"
   },
@@ -12,13 +12,15 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^22.15.29",
+    "@types/yargs": "^17.0.33",
     "chalk": "^5.4.1",
     "dayjs": "^1.11.13",
     "inquirer": "^12.6.3",
     "lowdb": "^7.0.1",
     "ora": "^8.2.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
     "tsx": "^4.19.4"

@@ -1,54 +1,90 @@
-// src/cli/main.ts
+// # VolleyDevByMaubry [1/5] El código nace como un susurro en la quietud del propósito.
 import { loadPluginsFromRegistry } from '../core/plugin-loader';
 import { context } from '../core/context';
 import chalk from 'chalk';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
+/**
+ * Displays the help message for KaizenCLI.
+ * @returns {Promise<void>}
+ */
 async function showHelp() {
   console.log(chalk.bold('📘 KaizenCLI - Ayuda'));
-  console.log('Uso: kz <modulo> <comando> [argumentos]');
+  console.log('Uso: kz <mod> <cmd> [args]');
   console.log('\nMódulos y comandos disponibles:');
-
-  const modules = context.getAllModules();
-  if (modules.length === 0) {
-    console.log(chalk.yellow('⚠️ No hay módulos registrados.'));
+  const mods = context.getAllModules();
+  if (mods.length === 0) {
+    console.log(chalk.yellow('⚠️ Sin módulos registrados.'));
     return;
   }
-
-  for (const module of modules) {
-    context.getHelpFor(module);
-  }
-
+  mods.forEach((mod) => context.getHelpFor(mod));
   console.log('\nEjemplos:');
-  console.log('  kz m add       # Registrar estado de ánimo (módulo moodtracker)');
-  console.log('  kz m help      # Mostrar comandos del módulo moodtracker');
-  console.log('\nPara más información sobre un módulo, usa: kz <modulo> help');
+  console.log('  kz m add    # Registrar estado');
+  console.log('  kz m hlp    # Ayuda de módulo');
+  console.log('\nMás info: kz <mod> hlp');
 }
 
+/**
+ * Main entry point for the CLI.
+ * @returns {Promise<void>}
+ */
 async function main() {
   try {
     await context.initDB();
     await loadPluginsFromRegistry();
 
-    const [, , ...args] = process.argv;
-    if (args.length === 0 || (args.length === 1 && args[0] === 'help')) {
-      await showHelp();
-      return;
+    let rawArgs = process.argv.slice(2); // Captura todos los argumentos originales
+    console.log(`[DEBUG] Raw args from process.argv: ${JSON.stringify(rawArgs)}`);
+
+    // Si rawArgs tiene un solo elemento, descomponemos manualmente
+    if (rawArgs.length === 1) {
+      const [command] = rawArgs;
+      rawArgs = command.split(' ').filter(arg => arg); // Divide el string en argumentos
+      console.log(`[DEBUG] Split args: ${JSON.stringify(rawArgs)}`);
     }
-    if (args.length < 2) {
-      console.log(chalk.red('❗ Error: Se requieren módulo y comando.'));
+
+    const argv = yargs(rawArgs)
+      .usage('Uso: kz <mod> <cmd> [args]')
+      .command('$0 <mod> <cmd> [args..]', 'Ejecuta un comando de KaizenCLI', (yargs) => {
+        yargs
+          .positional('mod', { describe: 'Módulo (e.g., m)', type: 'string', demandOption: true })
+          .positional('cmd', { describe: 'Comando (e.g., add)', type: 'string', demandOption: true })
+          .positional('args', { describe: 'Argumentos adicionales', type: 'string', array: true })
+          .option('debug', { alias: 'd', type: 'boolean', description: 'Habilita modo de depuración', default: false });
+      })
+      .help()
+      .parseSync();
+
+    const { mod, cmd, args = [], debug } = argv;
+
+    if (mod === 'hlp' && !cmd) {
       await showHelp();
       return;
     }
 
-    const [module, command, ...rest] = args;
-    if (command === 'help') {
-      context.getHelpFor(module);
+    if (debug) {
+      console.log(`[DEBUG] Parsed by yargs - Mod: ${mod}, Cmd: ${cmd}, Args: ${JSON.stringify(args)}`);
+    }
+
+    if (cmd === 'hlp') {
+      context.getHelpFor(mod);
+      return;
+    }
+    if (mod === 'run') {
+      if (!cmd) throw new Error('Ruta del script requerida');
+      await context.runScript(cmd, debug);
       return;
     }
 
-    await context.execute(module, command, rest);
+    if (args.length > 0) {
+      if (debug) console.log(`[DEBUG] Procesando args: ${args.join(' ')}`);
+    } else {
+      args.push(''); // Asegura que haya al menos un argumento vacío
+    }
+    await context.execute(mod, cmd, args, debug);
   } catch (err) {
-    console.error(chalk.red('❌ Error fatal:'), err.message);
+    console.error(chalk.red('❌ Error:'), (err as Error).message);
     process.exit(1);
   }
 }
