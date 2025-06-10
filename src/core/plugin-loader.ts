@@ -1,8 +1,9 @@
-// # VolleyDevByMaubry [3/5] Los módulos se alzan como pilares de una mente en evolución.
-import fs from 'fs';
-import path from 'path';
+// # VolleyDevByMaubry [3/∞] Los módulos se alzan como pilares de una mente en evolución.
+import { resolve, join } from 'path';
+import { readFileSync, existsSync } from 'fs';
 import { context } from './context';
 import chalk from 'chalk';
+import ora from 'ora';
 
 interface PluginMetadata {
   name: string;
@@ -10,30 +11,37 @@ interface PluginMetadata {
   commands: { name: string; description: string }[];
 }
 
-export async function loadPluginsFromRegistry() {
-  const registryPath = path.resolve('plugins.json');
-  if (!fs.existsSync(registryPath)) throw new Error('plugins.json no encontrado');
-  const registry = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
-  if (!Array.isArray(registry.plugins)) throw new Error('plugins debe ser un arreglo');
+export async function loadPluginsFromRegistry(): Promise<void> {
+  const spinner = ora('🔌 Cargando plugins...').start();
+  const registryPath = resolve(process.cwd(), 'plugins.json');
+  if (!existsSync(registryPath)) {
+    spinner.fail('plugins.json no encontrado');
+    throw new Error('plugins.json no encontrado');
+  }
 
-  for (const pluginName of registry.plugins) {
-    const pluginDir = path.resolve(`src/plugins/${pluginName}`);
-    const pluginPath = path.join(pluginDir, 'index.ts');
-    const metadataPath = path.join(pluginDir, 'plugin.json');
+  const { plugins } = JSON.parse(readFileSync(registryPath, 'utf-8')) as { plugins: string[] };
+  if (!Array.isArray(plugins)) {
+    spinner.fail('"plugins" debe ser un arreglo');
+    throw new Error('plugins debe ser un arreglo');
+  }
 
+  for (const pluginName of plugins) {
     try {
-      let metadata: PluginMetadata | null = null;
-      if (fs.existsSync(metadataPath)) {
-        metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
-        console.log(chalk.gray(`📦 Metadatos de ${pluginName}`));
+      spinner.text = `🔍 Cargando ${pluginName}`;
+      const pluginPath = join(process.cwd(), 'dist/plugins', pluginName);
+      const metaPath = join(pluginPath, 'plugin.json');
+
+      if (existsSync(metaPath)) {
+        const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as PluginMetadata;
+        spinner.info(`⚙️ ${meta.name} (${meta.prefix})`);
       }
-      if (!fs.existsSync(pluginPath)) throw new Error(`index.ts no encontrado en ${pluginDir}`);
-      const plugin = await import(pluginPath);
-      if (typeof plugin.register !== 'function') throw new Error(`'register' no encontrado en ${pluginName}`);
+
+      const plugin = await import(join(pluginPath, 'index.js'));
+      if (typeof plugin.register !== 'function') throw new Error('register() no encontrado');
       plugin.register(context);
-      console.log(chalk.green(`✅ ${pluginName} cargado`));
+      spinner.succeed(`Plugin ${pluginName} cargado`);
     } catch (err) {
-      console.error(chalk.red(`⚠️ Error en ${pluginName}:`), (err as Error).message);
+      spinner.fail(`Error en ${pluginName}: ${(err as Error).message}`);
     }
   }
 }

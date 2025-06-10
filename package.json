@@ -1,28 +1,51 @@
 {
-  "name": "kaizencli",
+  "name": "@maubry-ortega/kaizen-cli",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "CLI para gestionar tareas y estados de ánimo, inspirada en la mejora continua",
+  "main": "dist/cli/main.js",
   "type": "module",
-  "scripts": {
-    "dev": "tsx src/cli/main.ts"
+  "bin": {
+    "kaizen": "dist/cli/main.js"
   },
-  "keywords": [],
-  "author": "",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli/main.ts",
+    "test": "jest",
+    "start": "node dist/cli/main.js"
+  },
+  "keywords": [
+    "cli",
+    "kaizen",
+    "productivity",
+    "mood-tracker"
+  ],
+  "author": "Maubry Ortega",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^22.15.29",
-    "@types/yargs": "^17.0.33",
+    "boxen": "^5.1.2",
     "chalk": "^5.4.1",
+    "cli-table3": "^0.6.5",
     "dayjs": "^1.11.13",
+    "enquirer": "^2.4.1",
+    "figlet": "^1.8.1",
+    "gradient-string": "^3.0.0",
     "inquirer": "^12.6.3",
     "lowdb": "^7.0.1",
+    "nanoid": "^5.1.5",
     "ora": "^8.2.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
     "yargs": "^18.0.0"
   },
   "devDependencies": {
-    "tsx": "^4.19.4"
+    "@types/figlet": "^1.7.0",
+    "@types/gradient-string": "^1.1.6",
+    "@types/inquirer": "^9.0.8",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.15.29",
+    "@types/yargs": "^17.0.33",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
   }
 }
