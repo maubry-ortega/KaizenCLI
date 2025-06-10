@@ -1,50 +1,19 @@
-// # VolleyDevByMaubry [2/5] Cada línea teje un hilo en la tela del crecimiento personal.
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
-import { join } from 'path';
-import { KaizenCommand } from './types';
-import { getAllModules, getAllCommands, registerCommand, execute, getHelpFor } from './commands';
-import { runScript } from './tasks';
+// # VolleyDevByMaubry [2/∞] Cada línea teje un hilo en la tela del crecimiento personal.
+import { createDB } from '../infrastructure/db.js';
+import { MoodRepo } from '../infrastructure/mood-repo.js';
 
-/**
- * Core context for KaizenCLI, managing database and commands.
- */
 export class KaizenContext {
-  private commands: KaizenCommand[] = [];
-  private db: Low<{ tasks: any[]; moods: any[] }>;
-  private dbInitialized = false;
-  public config = { locale: 'es', theme: 'dark' };
+  public moods: MoodRepo;
 
   constructor() {
-    const file = join(process.cwd(), 'db.json');
-    this.db = new Low<{ tasks: any[]; moods: any[] }>(new JSONFile(file), { tasks: [], moods: [] });
+    const db = createDB<{ moods: import('../domain/mood.js').Mood[] }>('db.json');
+    this.moods = new MoodRepo(db);
   }
 
-  /**
-   * Initializes the database.
-   */
-  async initDB() {
-    if (this.dbInitialized) return;
-    await this.db.read().catch(() => {
-      this.db.data = { tasks: [], moods: [] };
-      this.db.write();
-    });
-    this.dbInitialized = true;
+  async init() {
+    await this.moods.init();
   }
-
-  getDB() {
-    return this.db;
-  }
-
-  getAllModules = getAllModules.bind(this);
-  getAllCommands = getAllCommands.bind(this);
-  registerCommand = registerCommand.bind(this);
-  execute = (mod: string, cmd: string, args: string[], debug = false) => {
-    console.log(`[DEBUG] Inside context.execute - Args: ${JSON.stringify(args)}`);
-    return execute.call(this, mod, cmd, args, debug);
-  };
-  getHelpFor = getHelpFor.bind(this);
-  runScript = runScript.bind(this);
 }
 
 export const context = new KaizenContext();
+
